@@ -9,6 +9,7 @@
         "@techtrain/cli-railway": "0.2.3"
     },
     "devDependencies": {
+        "husky": "^9.1.7",
         "jest": "^27.0.6",
         "simple-git-hooks": "^2.5.1"
     },
