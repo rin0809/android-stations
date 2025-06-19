@@ -39,6 +39,9 @@ android {
 }
 
 dependencies {
+    testImplementation "org.mockito.kotlin:mockito-kotlin:4.0.0"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.0"
+
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.22"
     implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'

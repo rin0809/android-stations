@@ -102,6 +102,8 @@ class S15 {
                     textViews.size,
                     "TextViewが存在しないか、複数のTextViewがレイアウト内に存在しています。"
                 )
+                val content = textViews[0].text.toString()
+                println("TextView content: $content")
                 // 正規表現を使用して result を Book リストにパースする（簡易的な方法）
                 val bookList = Regex("""Book\(id=([^,]+), title=([^,]+), url=([^,]+), detail=([^,]+), review=([^,]+), reviewer=([^\)]+)\)""")
                     .findAll(textViews[0].text)

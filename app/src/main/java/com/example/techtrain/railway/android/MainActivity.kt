@@ -1,84 +1,82 @@
 package com.example.techtrain.railway.android
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.example.techtrain.railway.android.databinding.ActivityMainBinding
-import android.content.Intent
-import android.util.Log
-import retrofit2.Retrofit
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import retrofit2.*
 import retrofit2.converter.moshi.MoshiConverterFactory
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-
-
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityMainBinding  // バインディング変数
+    private lateinit var binding: ActivityMainBinding
     private val TAG = "MainActivity"
+
+    // RetrofitとBooksServiceは一度だけ生成
+    private val booksService: BooksService by lazy {
+        // テスト用のモックがIntentに入っていれば使う。なければデフォルト生成
+        (intent.getSerializableExtra("MOCK_SERVICE") as? BooksService) ?: createDefaultService()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)  // バインディング初期化
+        binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         binding.text.text = "Hello Railway!"
 
         binding.button.setOnClickListener {
-            // ここにAPI呼び出し処理を入れる
+            val inputText = binding.editText.text.toString()
+            binding.text.text = inputText
 
-            // 1. RetrofitのService呼び出し
-            val call = booksService.getBooks()
+            // SecondActivityへ遷移
+            val intent = Intent(this, SecondActivity::class.java).apply {
+                putExtra("KEY_INPUT_TEXT", inputText)
+            }
+            startActivity(intent)
 
-            // 2. enqueueで非同期通信
-            call.enqueue(object : Callback<List<Book>> {
+            // Retrofitの非同期API呼び出し
+            booksService.publicBooks("0").enqueue(object : Callback<List<Book>> {
                 override fun onResponse(call: Call<List<Book>>, response: Response<List<Book>>) {
                     if (response.isSuccessful) {
                         val books = response.body()
-                        // List<Book>をtoString()で文字列化しTextViewに表示
                         binding.text.text = books?.toString() ?: "No books found"
+                        Log.d(TAG, "Books fetched successfully: $books")
                     } else {
-                        binding.text.text = "Error: ${response.code()}"
+                        val errorMsg = "Error: ${response.code()} ${response.message()}"
+                        binding.text.text = errorMsg
+                        Log.e(TAG, errorMsg)
                     }
                 }
 
                 override fun onFailure(call: Call<List<Book>>, t: Throwable) {
-                    binding.text.text = "Failed: ${t.message}"
+                    val failMsg = "Failed: ${t.localizedMessage ?: t.message}"
+                    binding.text.text = failMsg
+                    Log.e(TAG, failMsg, t)
                 }
             })
         }
-
     }
 
-    val retrofit = Retrofit.Builder()
-        .baseUrl("http://railway.bookreview.techtrain.dev/")
-        .addConverterFactory(MoshiConverterFactory.create())
-        .build()
+    private fun createDefaultService(): BooksService {
+        val moshi = Moshi.Builder()
+            .add(KotlinJsonAdapterFactory())
+            .build()
 
-    val booksService = retrofit.create(BooksService::class.java)
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://railway.bookreview.techtrain.dev/") // 可能ならhttpsに変更推奨
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
 
-    override fun onStart() {
-        super.onStart()
-        Log.d(TAG, "onStart")
+        return retrofit.create(BooksService::class.java)
     }
 
-    override fun onResume() {
-        super.onResume()
-        Log.d(TAG, "onResume")
-    }
-
-    override fun onPause() {
-        super.onPause()
-        Log.d(TAG, "onPause")
-    }
-
-    override fun onStop() {
-        super.onStop()
-        Log.d(TAG, "onStop")
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d(TAG, "onDestroy")
-    }
+    // ライフサイクルログ（任意）
+    override fun onStart() { super.onStart(); Log.d(TAG, "onStart") }
+    override fun onResume() { super.onResume(); Log.d(TAG, "onResume") }
+    override fun onPause() { super.onPause(); Log.d(TAG, "onPause") }
+    override fun onStop() { super.onStop(); Log.d(TAG, "onStop") }
+    override fun onDestroy() { super.onDestroy(); Log.d(TAG, "onDestroy") }
 }
