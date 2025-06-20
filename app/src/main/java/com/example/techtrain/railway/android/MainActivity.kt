@@ -40,14 +40,12 @@ class MainActivity : AppCompatActivity() {
             GlobalScope.launch(Dispatchers.IO) {
                 val call = booksService.publicBooks("0")
                 call.enqueue(object : Callback<List<Book>> {
-                    override fun onResponse(
-                        call: Call<List<Book>>,
-                        response: Response<List<Book>>
-                    ) {
-                        val booksText = response.body()?.toString() ?: "No books"
-                        // UI更新はメインスレッドで
+
+                    override fun onResponse(call: Call<List<Book>>, response: Response<List<Book>>) {
+                        val books = response.body()
+                        val displayText = if (books.isNullOrEmpty()) "No books" else books[0].title
                         runOnUiThread {
-                            binding.text.text = booksText
+                            binding.text.text = displayText
                         }
                     }
 
