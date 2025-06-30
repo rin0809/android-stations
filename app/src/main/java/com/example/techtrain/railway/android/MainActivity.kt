@@ -3,18 +3,15 @@ package com.example.techtrain.railway.android
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope // ← これが必要
+import androidx.lifecycle.lifecycleScope
 import com.example.techtrain.railway.android.databinding.ActivityMainBinding
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
-import androidx.lifecycle.lifecycleScope
-
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -39,47 +36,45 @@ class MainActivity : AppCompatActivity() {
         val booksService = retrofit.create(BooksService::class.java)
 
         binding.button.setOnClickListener {
-            val call = booksService.publicBooks("0")
-            call.enqueue(object : Callback<List<Book>> {
-                override fun onResponse(call: Call<List<Book>>, response: Response<List<Book>>) {
-                    val books = response.body()
-                    val displayText = if (books.isNullOrEmpty()) "No books" else books[0].toString()
+            lifecycleScope.launch {
+                try {
+                    val books = withContext(Dispatchers.IO) {
+                        booksService.publicBooks("0")
+                    }
+
+                    val displayText = if (books.isNotEmpty()) books[0].toString() else "No books"
                     binding.text.text = displayText
-                }
 
-                override fun onFailure(call: Call<List<Book>>, t: Throwable) {
-                    binding.text.text = "Failed: ${t.message}"
+                    // TextView の内容を正規表現で解析（ボタンクリック後に行う）
+                    val regex = Regex("""Book\(id=([^,]+), title=([^,]+), url=([^,]+), detail=([^,]+), review=([^,]+), reviewer=([^\)]+)\)""")
+                    val matchResults = regex.findAll(binding.text.text).toList()
+                    if (matchResults.isNotEmpty()) {
+                        val parsedBooks = matchResults.map { match ->
+                            Book(
+                                id = match.groupValues[1],
+                                title = match.groupValues[2],
+                                url = match.groupValues[3],
+                                detail = match.groupValues[4],
+                                review = match.groupValues[5],
+                                reviewer = match.groupValues[6]
+                            )
+                        }
+                        // ここで parsedBooks を使って何か表示したりログ出力したりできます
+                        Log.d(TAG, "Parsed books: $parsedBooks")
+                    }
+
+                } catch (e: Exception) {
+                    binding.text.text = "Failed: ${e.message}"
                 }
-            })
+            }
         }
-
-
     }
 
     // ライフサイクルログ（おまけ）
-    override fun onStart() {
-        super.onStart()
-        Log.d(TAG, "onStart")
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Log.d(TAG, "onResume")
-    }
-
-    override fun onPause() {
-        super.onPause()
-        Log.d(TAG, "onPause")
-    }
-
-    override fun onStop() {
-        super.onStop()
-        Log.d(TAG, "onStop")
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d(TAG, "onDestroy")
-    }
-
+    override fun onStart() { super.onStart(); Log.d(TAG, "onStart") }
+    override fun onResume() { super.onResume(); Log.d(TAG, "onResume") }
+    override fun onPause() { super.onPause(); Log.d(TAG, "onPause") }
+    override fun onStop() { super.onStop(); Log.d(TAG, "onStop") }
+    override fun onDestroy() { super.onDestroy(); Log.d(TAG, "onDestroy") }
 }
+

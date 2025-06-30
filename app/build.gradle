@@ -51,6 +51,9 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
 
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4' // バージョンは適宜
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
+
 
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
@@ -71,6 +74,7 @@ dependencies {
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:1.9.22"
     testImplementation "org.jetbrains.kotlin:kotlin-reflect:1.9.22"
     testImplementation 'org.robolectric:robolectric:4.12.2'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.0'
     testImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     testImplementation 'androidx.test.espresso:espresso-intents:3.5.1'
 }
