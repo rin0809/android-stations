@@ -1,5 +1,8 @@
 package com.example.techtrain.railway.android
 
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -29,45 +32,34 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         val retrofit = Retrofit.Builder()
-            .baseUrl("http://railway.bookreview.techtrain.dev/")
+            .baseUrl("https://railway.bookreview.techtrain.dev/")
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
 
         val booksService = retrofit.create(BooksService::class.java)
 
         binding.button.setOnClickListener {
-            lifecycleScope.launch {
-                try {
-                    val books = withContext(Dispatchers.IO) {
-                        booksService.publicBooks("0")
+            booksService.publicBooks().enqueue(object : Callback<List<Book>> {
+                override fun onResponse(call: Call<List<Book>>, response: Response<List<Book>>) {
+                    if (response.isSuccessful) {
+                        val books = response.body()
+                        val displayText = books?.joinToString("\n") ?: "No books"
+                        binding.text.text = displayText
+                    } else {
+                        binding.text.text = "Error: ${response.code()}"
                     }
-
-                    val displayText = if (books.isNotEmpty()) books[0].toString() else "No books"
-                    binding.text.text = displayText
-
-                    // TextView の内容を正規表現で解析（ボタンクリック後に行う）
-                    val regex = Regex("""Book\(id=([^,]+), title=([^,]+), url=([^,]+), detail=([^,]+), review=([^,]+), reviewer=([^\)]+)\)""")
-                    val matchResults = regex.findAll(binding.text.text).toList()
-                    if (matchResults.isNotEmpty()) {
-                        val parsedBooks = matchResults.map { match ->
-                            Book(
-                                id = match.groupValues[1],
-                                title = match.groupValues[2],
-                                url = match.groupValues[3],
-                                detail = match.groupValues[4],
-                                review = match.groupValues[5],
-                                reviewer = match.groupValues[6]
-                            )
-                        }
-                        // ここで parsedBooks を使って何か表示したりログ出力したりできます
-                        Log.d(TAG, "Parsed books: $parsedBooks")
-                    }
-
-                } catch (e: Exception) {
-                    binding.text.text = "Failed: ${e.message}"
                 }
-            }
+
+                override fun onFailure(call: Call<List<Book>>, t: Throwable) {
+                    binding.text.text = "Failed: ${t.message}"
+                }
+            })
         }
+
+
+
+
+
     }
 
     // ライフサイクルログ（おまけ）

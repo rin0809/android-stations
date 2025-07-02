@@ -10,4 +10,8 @@ data class Book(
     val detail: String,
     val review: String,
     val reviewer: String
-)
+) {
+    override fun toString(): String {
+        return "Book(id=$id, title=$title, url=$url, detail=$detail, review=$review, reviewer=$reviewer)"
+    }
+}
